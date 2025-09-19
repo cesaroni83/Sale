@@ -1,0 +1,155 @@
+﻿@page "/Login"
+
+@using System.ComponentModel.DataAnnotations
+
+@* 
+@inject SignInManager<ApplicationUser> SignInManager
+@inject IdentityRedirectManager RedirectManager *@
+
+@inject ILogger<Login> Logger
+@inject NavigationManager NavigationManager
+
+<PageTitle>Log in</PageTitle>
+<div class="login-componente">
+    @* <div class="container @(isActive ? "active" : "")"> *@
+    <div class="container">
+        
+        <EditForm Model="Input" OnValidSubmit="LoginUser" FormName="LoginPage">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+            <div class="form-box login">
+                <section>
+                    
+                    <h1>Login</h1>
+
+                    <div class="input-box">
+                        <InputText @bind-Value="Input.Email" type="email" placeholder="Email" class="form-control" />
+                        <ValidationMessage For="@(() => Input.Email)" />
+                        <i class='bx bxs-envelope'></i>
+                    </div>
+
+                    <div class="input-box">
+                        <InputText type="password" @bind-Value="Input.Password" placeholder="Password" class="form-control" />
+                        <ValidationMessage For="@(() => Input.Password)" />
+                        <i class='bx bxs-lock'></i>
+                    </div>
+
+                    <div class="align-content-lg-start">
+                        <label class="form-label">
+                            <InputCheckbox @bind-Value="Input.RememberMe" class="darker-border-checkbox form-check-input" />
+                            Remember me
+                        </label>
+                    </div>
+
+                    <div class="forgot-link">
+                        <a href="Account/ForgotPassword">Forgot Your Password?</a>
+                    </div>
+
+                    <button type="submit" class="bnt">Login</button>
+
+                    <p>Or Login with social Platforms</p>
+                    <div class="social-icons">
+                        <a href="#"><i class='bx bxl-google'></i></a>
+                        <a href="#"><i class='bx bxl-facebook-circle'></i></a>
+                        <a href="#"><i class='bx bxl-windows'></i></a>
+                        <a href="#"><i class='bx bxl-github'></i></a>
+                    </div>
+                </section>
+            </div>
+        </EditForm>
+
+            <div class="toggle-box">
+            <div class="toggle-panel toggle-left">
+                <h1>Hello, Welcome!</h1>
+                <p>Don't have an Account?</p>
+                <Button Type="ButtonType.Link" class="bnt login-btn" Color="ButtonColor.Primary" To="@(NavigationManager.GetUriWithQueryParameters("/Register", new Dictionary<string, object?> { ["ReturnUrl"] = ReturnUrl }))"> Register </Button>
+                @* <button type="button" class="bnt register-btn" @onclick="GoRegister">Register</button> *@
+               @*  <a href="@(NavigationManager.GetUriWithQueryParameters("Account/Register", new Dictionary<string, object?> { ["ReturnUrl"] = ReturnUrl }))">Register as a new user</a> *@
+            </div>
+        </div>
+        
+    </div>
+    
+</div>
+@code {
+    private string? errorMessage;
+
+    // [CascadingParameter]
+    // private HttpContext HttpContext { get; set; } = default!;
+
+    [SupplyParameterFromForm]
+    private InputModel Input { get; set; } = new();
+
+    [SupplyParameterFromQuery]
+    private string? ReturnUrl { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        // if (HttpMethods.IsGet(HttpContext.Request.Method))
+        // {
+        //     // Clear the existing external cookie to ensure a clean login process
+        //     await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
+        // }
+    }
+
+    private bool isActive;
+
+    private void ToggleClass(bool active)
+    {
+        isActive = active;
+    }
+
+    public async Task LoginUser()
+    {
+        // This doesn't count login failures towards account lockout
+        // To enable password failures to trigger account lockout, set lockoutOnFailure: true
+        // var result = await SignInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
+        // if (result.Succeeded)
+        // {
+        //     Logger.LogInformation("User logged in.");
+        //     RedirectManager.RedirectTo(ReturnUrl);
+        // }
+        // else if (result.RequiresTwoFactor)
+        // {
+        //     RedirectManager.RedirectTo(
+        //         "Account/LoginWith2fa",
+        //         new() { ["returnUrl"] = ReturnUrl, ["rememberMe"] = Input.RememberMe });
+        // }
+        // else if (result.IsLockedOut)
+        // {
+        //     Logger.LogWarning("User account locked out.");
+        //     RedirectManager.RedirectTo("Account/Lockout");
+        // }
+        // else
+        // {
+        //     errorMessage = "Error: Invalid login attempt.";
+        // }
+    }
+
+    private sealed class InputModel
+    {
+        [Required]
+        [EmailAddress]
+        public string Email { get; set; } = "";
+
+        [Required]
+        [DataType(DataType.Password)]
+        public string Password { get; set; } = "";
+
+        [Display(Name = "Remember me?")]
+        public bool RememberMe { get; set; }
+    }
+
+    public void GoRegister()
+    {
+        var queryParams = new Dictionary<string, object?>();
+
+        if (!string.IsNullOrEmpty(ReturnUrl))
+        {
+            queryParams["ReturnUrl"] = ReturnUrl;
+        }
+
+        var url = NavigationManager.GetUriWithQueryParameters("/Register", queryParams);
+        NavigationManager.NavigateTo(url);
+    }
+}

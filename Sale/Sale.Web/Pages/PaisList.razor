@@ -1,0 +1,396 @@
+﻿@page "/PaisList"
+@using Sale.Shared.Modelo.DTO
+@using Sale.Shared.Modelo.Estatico
+@using Sale.Web.Repositorio
+@inject NavigationManager Navigation
+@inject ConsumoPais PaisConsumo
+
+<PageTitle>Pais</PageTitle>
+<ConfirmDialog @ref="dialog" />
+<div style="max-width:90%; height:auto;justify-content:center;position: relative; top: 20px;" class="container justify-content-center">
+    <Accordion AlwaysOpen="true">
+        <AccordionItem Active="true">
+            <TitleTemplate>
+                <Icon Name="IconName.HouseFill" Class="me-1" />Registro Pais
+            </TitleTemplate>
+            <Content>
+                <!-- Fila 1 -->
+                <div class="row justify-content-center">
+                    <Card style="width:80%; height:auto; margin:50px">
+                        <CardHeader class="text-center fs-4">
+                            Registro De Paises
+                        </CardHeader>
+                        <CardBody>
+                            <EditForm Model="Input" OnValidSubmit="@Create_Pais">
+                                <DataAnnotationsValidator />
+                                <div class="container">
+                                    <div class="form-group">
+                                        <div class="row">
+                                            <div class="col-4">
+                                                <label>Nombre Del Pais :</label>
+                                            </div>
+                                            <div class="col-7">
+                                                <InputText @bind-Value="Input.Nombre_pais" placeholder="Nombre Del Pais" class="form-control" disabled="@disableForm" />
+                                                <ValidationMessage For="() => Input.Nombre_pais" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <br />
+                                    <div class="form-group">
+                                        <div class="row">
+                                            <div class="col-4">
+                                                <label>Información :</label>
+                                            </div>
+                                            <div class="col-7">
+                                                <InputTextArea @bind-Value="Input.Informacion" placeholder="Información del País" class="form-control" Rows="4" disabled="@disableForm" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <br />
+                                    <div class="form-group">
+                                        <div class="row">
+                                            <div class="col-4">
+                                                <label>Foto :</label>
+                                            </div>
+                                            <div class="col-7">
+                                                <Image Src="@previewUrl" IsThumbnail="true" Alt="placeholder" style="max-width:200px; border:1px solid #ccc;" disabled="@disableForm" />
+                                                <br />
+                                                <InputFile OnChange="CargarImagen" accept=".jpg,.jpeg,.png" disabled="@disableForm">></InputFile>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <br />
+                                    <div class="form-group">
+                                        <div class="row">
+                                            <div class="col-4">
+                                                <label>Estado:</label>
+                                            </div>
+                                            <div class="col-7">
+                                                <InputSelect @bind-Value="Input.Estado_pais" class="form-control" disabled="@disableForm">
+                                                    <option value="">Seleccione</option>
+                                                    @foreach (var item in items)
+                                                    {
+                                                        <option value="@item.Id">@item.Text</option>
+                                                    }
+                                                </InputSelect>
+                                                <ValidationMessage For="() => Input.Estado_pais" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <br />
+                                    <div class="form-group">
+                                        <div class="row">
+                                            <div class="col-4">
+                                            </div>
+                                            <div class="col-7 d-flex justify-content-center">
+                                                <div class=" d-flex align-items-center gap-5">
+                                                    <button type="submit" class="btn btn-primary" disabled="@disableForm">@text_buttom</button>
+                                                    <button type="reset" class="btn btn-secondary" @onclick="ResetForm" disabled="@disableForm">Cancelar</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </EditForm>
+                            <br />
+                        </CardBody>
+                        <CardFooter class="d-flex justify-content-center gap-5">
+                            <button class="btn btn-success" @onclick="NewRecord" disabled="@newRecord">Nuevo</button>
+                            <button class="btn btn-warning" @onclick="EditRecord" disabled="@updateRecord">Update</button>
+                            <button class="btn btn-danger" @onclick="DeleteRecord" disabled="@deleteRecord">Delete</button>
+                        </CardFooter>
+                    </Card>
+                </div>
+            </Content>
+        </AccordionItem>
+        <AccordionItem>
+            <TitleTemplate>
+                <Icon Name="IconName.ListTask" Class="me-1" /> Lista De Paises 
+            </TitleTemplate>
+            <Content>
+                <!-- Fila 2 -->
+                <div class="row justify-content-center">
+                    <Grid TItem="PaisDTO"
+                          Style="vertical-align: middle;"
+                          Class="table table-hover table-bordered"
+                          FiltersRowCssClass="bg-primary text-white bg-opacity-25 border-bottom-0"
+                          HeaderRowCssClass="bg-primary text-white border-bottom-0"
+                          DataProvider="PaisDataProvider"
+                          AllowFiltering="true"
+                          AllowPaging="true"
+                          PageSize="10"
+                          AllowSorting="true"
+                          AllowRowClick="true"
+                          OnRowClick="OnrowClick"
+                          Responsive="true"
+                          @ref="grid">
+                        <GridColumn TItem="PaisDTO" HeaderText="Foto" FilterTextboxWidth="50" HeaderTextAlignment="Alignment.Center" TextAlignment="Alignment.Center">
+                            <div class="text-center">
+                                <Image Src="@ObtenerImagen(@context.Foto_pais)" Class="rounded" Alt="placeholder" style="width:50px; height:auto;" />
+                            </div>
+                        </GridColumn>
+                        <GridColumn TItem="PaisDTO" HeaderText="Id Pais" PropertyName="Id_pais" SortString="Id_pais" SortKeySelector="item => item.Id_pais" FilterTextboxWidth="100" HeaderTextAlignment="Alignment.Center" TextAlignment="Alignment.Center">
+                            @context.Id_pais
+                        </GridColumn>
+                        <GridColumn TItem="PaisDTO" HeaderText="Pais" PropertyName="Nombre_pais" HeaderTextAlignment="Alignment.Center" SortString="Nombre_pais" SortKeySelector="item => item.Nombre_pais" FilterTextboxWidth="300">
+                            @context.Nombre_pais
+                        </GridColumn>
+                        <GridColumn TItem="PaisDTO" HeaderText="Information" PropertyName="Informacion" SortString="Informacion" SortKeySelector="item => item.Informacion" FilterTextboxWidth="150">
+                            @context.Informacion
+                        </GridColumn>
+                        <GridColumn TItem="PaisDTO" HeaderText="Estado" PropertyName="Estado_pais" HeaderTextAlignment="Alignment.Center" SortString="Estado_pais" SortKeySelector="item => item.Estado_pais" FilterTextboxWidth="150">
+                            @Estado.GetTextEstado(@context.Estado_pais)
+                        </GridColumn>
+                    </Grid>
+                </div>
+            </Content>
+        </AccordionItem>
+    </Accordion>
+</div>
+
+@code {
+    private ConfirmDialog dialog = default!;
+    private string? errorMessage;
+    [Inject] ToastService ToastService { get; set; } = default!;
+    [Inject] ModalService ModalService { get; set; } = default!;
+    public PaisDTO Input = new PaisDTO();
+    private List<Estado> items = new();
+    private string? previewUrl;
+    private BlazorBootstrap.Grid<PaisDTO>? grid;
+    private bool newRecord = false;
+    private bool deleteRecord = false;
+    private bool updateRecord = false;
+    private string text_buttom = "Save";
+    private bool disableForm = true;
+
+
+    private void NewRecord()
+    {
+        ResetForm();
+        updateRecord = true;
+        deleteRecord = true;
+        newRecord = true;
+        text_buttom = "Save";
+        disableForm = false;
+    }
+    private void EditRecord()
+    {
+        if (Input != null && !string.IsNullOrWhiteSpace(Input.Nombre_pais))
+        {
+            text_buttom = "Update";
+            newRecord = true;
+            deleteRecord = true;
+            disableForm = false;
+        }
+        else
+        {
+            // do something
+            ToastService.Notify(new ToastMessage(ToastType.Warning, $"Seleccione un Registro Para Actualiar Datos..!"));
+            ResetForm();
+        }
+
+    }
+    private async Task DeleteRecord()
+    {
+        if (Input != null && !string.IsNullOrWhiteSpace(Input.Nombre_pais))
+        {
+            var confirmation = await dialog.ShowAsync(
+            title: "Esta Segura Que Desea Eliminar Este Registro?",
+            message1: "Desea Continuar Con El Proceso?");
+
+            if (confirmation)
+            {
+                // do something
+                disableForm = false;
+                var CreatePais = await PaisConsumo.CancelPais(Input.Id_pais);
+                if (CreatePais)
+                {
+                    ToastService.Notify(new(ToastType.Success, $"Record Pais Saved Successfully."));
+                    await Task.Delay(3000);
+                    await RefrescarGrid();
+                    ResetForm();
+                }
+                else
+                {
+                    ToastService.Notify(new(ToastType.Danger, $"Error Al Eliminare il Registro!!"));
+                    await Task.Delay(3000);
+                    await RefrescarGrid();
+                    ResetForm();
+                }
+            }
+            else
+            {
+                // do something
+                ResetForm();
+                disableForm = true;
+            }
+        }
+        else
+        {
+            // do something
+            ToastService.Notify(new ToastMessage(ToastType.Danger, $"Seleccione un Registro Para Eliminar Datos..!"));
+            ResetForm();
+        }
+
+
+    }
+
+    private IEnumerable<PaisDTO> ListaPais = default!;
+
+    protected  override void OnInitialized()
+    {
+        // Llenar el combo usando el método estático de tu clase
+        items = Estado.GetItems();
+        
+    }
+
+    private async Task<GridDataProviderResult<PaisDTO>> PaisDataProvider(GridDataProviderRequest<PaisDTO> request)
+    {
+        if (ListaPais is null) // pull employees only one time for client-side filtering, sorting, and paging
+            ListaPais = await PaisConsumo.GetPaisAll(); // call a service or an API to pull the employees
+        return await Task.FromResult(request.ApplyTo(ListaPais));
+        
+
+        // esto es para grid blazor server
+        // string sortString = "";
+        // SortDirection sortDirection = SortDirection.None;
+
+        // if (request.Sorting is not null && request.Sorting.Any())
+        // {
+        //     // Note: Multi column sorting is not supported at this moment
+        //     sortString = request.Sorting.FirstOrDefault()!.SortString;
+        //     sortDirection = request.Sorting.FirstOrDefault()!.SortDirection;
+        // }
+        // var PaisLista = await PaisConsumo.GetPaisAll();//_Pais.ListaAll();  // call a service or an API to pull the employees
+        // return await Task.FromResult(request.ApplyTo(PaisLista));
+    }
+
+    private void OnrowClick(GridRowEventArgs<PaisDTO> args)
+    {
+        //await ModalService.ShowAsync(new ModalOption { Type = ModalType.Primary, Title = "Event: Row Click", Message = $"Id: {args.Item.Id_user}, Name: {args.Item.User_name}" });
+        Input.Id_pais = args.Item.Id_pais;
+        Input.Nombre_pais = args.Item.Nombre_pais;
+        Input.Informacion = args.Item.Informacion;
+        Input.Foto_pais = args.Item.Foto_pais;
+        Input.Estado_pais = args.Item.Estado_pais;
+        previewUrl = ObtenerImagen(Input.Foto_pais);
+        // await ShowConfirmationAsync(DialogSize.Regular, args.Item.Id_pais);
+        return;
+    }
+
+    private async Task ShowConfirmationAsync(DialogSize size, int id)
+    {
+        var options = new ConfirmDialogOptions
+        {
+            YesButtonText = "Update",
+            YesButtonColor = ButtonColor.Success,
+            NoButtonText = "Delete",
+            NoButtonColor = ButtonColor.Danger,
+            Size = size,
+            IsVerticallyCentered = true
+
+        };
+
+        var confirmation = await dialog.ShowAsync(
+            title: "Automation System",
+             message1: "Desea Modificar o Eliminar los Datops Del Usuario?",
+            // parameters: user_parameter,
+            confirmDialogOptions: options);
+
+        if (confirmation)
+        {
+            Navigation.NavigateTo($"/PaisUpdate/{id}");
+            // do something
+        }
+        else
+        {
+            // do something
+            ToastService.Notify(new ToastMessage(ToastType.Danger, $"Delete action canceled."));
+
+        }
+    }
+
+    public async Task Create_Pais()
+    {
+        if (text_buttom == "Save")
+        {
+            Input.Foto_pais = ObtenerBytes(previewUrl);
+            var CreatePais = await PaisConsumo.CreatePais(Input);
+            ToastService.Notify(new(ToastType.Success, $"Record Pais Saved Successfully."));
+            await Task.Delay(3000);
+            await RefrescarGrid();
+            ResetForm();
+        }
+        if (text_buttom == "Update")
+        {
+            Input.Foto_pais = ObtenerBytes(previewUrl);
+            var CreatePais = await PaisConsumo.UpdatePais(Input);
+            ToastService.Notify(new(ToastType.Success, $"Record Pais Update Successfully."));
+            await Task.Delay(3000);
+            await RefrescarGrid();
+            text_buttom = "Save";
+            ResetForm();
+        }
+
+    }
+
+    private void ResetForm()
+    {
+        Input = new PaisDTO();
+        newRecord = false;
+        updateRecord = false;
+        deleteRecord = false;
+        previewUrl = "";
+        disableForm = true;
+    }
+
+    private async Task CargarImagen(InputFileChangeEventArgs e)
+    {
+        var archivo = e.File;
+        if (archivo != null)
+        {
+            var formato = Path.GetExtension(archivo.Name).ToLower();
+            if (formato != ".jpg" && formato != ".jpeg" && formato != ".png")
+            {
+                // Mostrar mensaje de error
+                ToastService.Notify(new(ToastType.Danger, $"Upload Only File *.jpg, *.jpeg, *.png"));
+                await Task.Delay(3000);
+                return;
+            }
+            // Convertimos el archivo a base64 para mostrarlo en un <img>
+            using var stream = archivo.OpenReadStream(maxAllowedSize: 10_000_000); // 10 MB máx
+            using var ms = new MemoryStream();
+            await stream.CopyToAsync(ms);
+            var bytes = ms.ToArray();
+
+            previewUrl = $"data:{archivo.ContentType};base64,{Convert.ToBase64String(bytes)}";
+        }
+    }
+
+    private string? ObtenerImagen(byte[]? bytes)
+    {
+        if (bytes == null || bytes.Length == 0)
+            return null;
+
+        string base64 = Convert.ToBase64String(bytes);
+        return $"data:image/jpeg;base64,{base64}";
+    }
+
+    private byte[]? ObtenerBytes(string? base64Image)
+    {
+        if (string.IsNullOrWhiteSpace(base64Image))
+            return null;
+
+        // Si la cadena incluye el encabezado tipo "data:image/jpeg;base64,"
+        var parts = base64Image.Split(',');
+        string base64 = parts.Length > 1 ? parts[1] : parts[0];
+
+        return Convert.FromBase64String(base64);
+    }
+
+    private async Task RefrescarGrid()
+    {
+        ListaPais = await PaisConsumo.GetPaisAll(); // traes otra vez de la API
+        await grid.RefreshDataAsync();
+    }
+}
