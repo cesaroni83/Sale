@@ -5,9 +5,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Sale.Shared.Modelo.Entidades
+namespace Sale.Shared.Modelo.DTO
 {
-    public class Ciudad
+    public class CiudadDTO
     {
         [Key]
         [Display(Name = "ID Ciudad")]
@@ -32,14 +32,9 @@ namespace Sale.Shared.Modelo.Entidades
         [MaxLength(100, ErrorMessage = "El Campo {0} no puede mas de {1} Caracteres")]
         public string Informacion_ciudad { get; set; } = string.Empty;
 
-        [Display(Name = "Fecha De Registro")]
-        public DateTime Date_reg { get; set; } = DateTime.Now;
-
-
         [Display(Name = "Estado Ciudad")]
         [Required(ErrorMessage = "El Campo {0} es Obligatorio!")]
         [MaxLength(10, ErrorMessage = "El Campo {0} no puede mas de {1} Caracteres")]
         public string Estado_ciudad { get; set; } = string.Empty;
-
     }
 }

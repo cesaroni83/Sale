@@ -2,9 +2,11 @@
 @using Sale.Shared.Modelo.DTO
 @using Sale.Shared.Modelo.Estatico
 @using Sale.Web.Repositorio
+@using Sale.Web.Repositorio.Implementacion
 @inject NavigationManager Navigation
-@inject ConsumoPais PaisConsumo
-
+@inject IConsumoGeneral<PaisDTO> Consumo
+ 
+ 
 <PageTitle>Pais</PageTitle>
 <ConfirmDialog @ref="dialog" />
 <div style="max-width:90%; height:auto;justify-content:center;position: relative; top: 20px;" class="container justify-content-center">
@@ -147,12 +149,14 @@
         </AccordionItem>
     </Accordion>
 </div>
+<Preload LoadingText="Loading..." />
 
 @code {
     private ConfirmDialog dialog = default!;
     private string? errorMessage;
     [Inject] ToastService ToastService { get; set; } = default!;
     [Inject] ModalService ModalService { get; set; } = default!;
+    [Inject] protected PreloadService PreloadService { get; set; } = default!;
     public PaisDTO Input = new PaisDTO();
     private List<Estado> items = new();
     private string? previewUrl;
@@ -202,7 +206,7 @@
             {
                 // do something
                 disableForm = false;
-                var CreatePais = await PaisConsumo.CancelPais(Input.Id_pais);
+                var CreatePais = await Consumo.Delete("api/Paises", Input.Id_pais);//await PaisConsumo.CancelPais(Input.Id_pais);
                 if (CreatePais)
                 {
                     ToastService.Notify(new(ToastType.Success, $"Record Pais Saved Successfully."));
@@ -237,32 +241,35 @@
 
     private IEnumerable<PaisDTO> ListaPais = default!;
 
-    protected  override void OnInitialized()
+    private async Task onLoadAsync()
     {
+        PreloadService.Show(SpinnerColor.Light, "Loading data...");
+        await Task.Delay(3000);
         // Llenar el combo usando el método estático de tu clase
         items = Estado.GetItems();
-        
+        PreloadService.Hide();
     }
 
     private async Task<GridDataProviderResult<PaisDTO>> PaisDataProvider(GridDataProviderRequest<PaisDTO> request)
     {
-        if (ListaPais is null) // pull employees only one time for client-side filtering, sorting, and paging
-            ListaPais = await PaisConsumo.GetPaisAll(); // call a service or an API to pull the employees
-        return await Task.FromResult(request.ApplyTo(ListaPais));
+        try
+        {
+            PreloadService.Show(SpinnerColor.Light, "Loading data...");
+            await Task.Delay(2000);
+            if (ListaPais is null) // pull employees only one time for client-side filtering, sorting, and paging
+                ListaPais = await Consumo.GetAllRecords("api/Paises");
+            return await Task.FromResult(request.ApplyTo(ListaPais));
+        }
+        catch (Exception)
+        {
+            
+            throw;
+        }
+        finally
+        {
+            PreloadService.Hide();
+        }
         
-
-        // esto es para grid blazor server
-        // string sortString = "";
-        // SortDirection sortDirection = SortDirection.None;
-
-        // if (request.Sorting is not null && request.Sorting.Any())
-        // {
-        //     // Note: Multi column sorting is not supported at this moment
-        //     sortString = request.Sorting.FirstOrDefault()!.SortString;
-        //     sortDirection = request.Sorting.FirstOrDefault()!.SortDirection;
-        // }
-        // var PaisLista = await PaisConsumo.GetPaisAll();//_Pais.ListaAll();  // call a service or an API to pull the employees
-        // return await Task.FromResult(request.ApplyTo(PaisLista));
     }
 
     private void OnrowClick(GridRowEventArgs<PaisDTO> args)
@@ -274,62 +281,77 @@
         Input.Foto_pais = args.Item.Foto_pais;
         Input.Estado_pais = args.Item.Estado_pais;
         previewUrl = ObtenerImagen(Input.Foto_pais);
-        // await ShowConfirmationAsync(DialogSize.Regular, args.Item.Id_pais);
         return;
     }
 
-    private async Task ShowConfirmationAsync(DialogSize size, int id)
-    {
-        var options = new ConfirmDialogOptions
-        {
-            YesButtonText = "Update",
-            YesButtonColor = ButtonColor.Success,
-            NoButtonText = "Delete",
-            NoButtonColor = ButtonColor.Danger,
-            Size = size,
-            IsVerticallyCentered = true
+    // private async Task ShowConfirmationAsync(DialogSize size, int id)
+    // {
+    //     var options = new ConfirmDialogOptions
+    //     {
+    //         YesButtonText = "Update",
+    //         YesButtonColor = ButtonColor.Success,
+    //         NoButtonText = "Delete",
+    //         NoButtonColor = ButtonColor.Danger,
+    //         Size = size,
+    //         IsVerticallyCentered = true
 
-        };
+    //     };
 
-        var confirmation = await dialog.ShowAsync(
-            title: "Automation System",
-             message1: "Desea Modificar o Eliminar los Datops Del Usuario?",
-            // parameters: user_parameter,
-            confirmDialogOptions: options);
+    //     var confirmation = await dialog.ShowAsync(
+    //         title: "Automation System",
+    //          message1: "Desea Modificar o Eliminar los Datops Del Usuario?",
+    //         // parameters: user_parameter,
+    //         confirmDialogOptions: options);
 
-        if (confirmation)
-        {
-            Navigation.NavigateTo($"/PaisUpdate/{id}");
-            // do something
-        }
-        else
-        {
-            // do something
-            ToastService.Notify(new ToastMessage(ToastType.Danger, $"Delete action canceled."));
+    //     if (confirmation)
+    //     {
+    //         Navigation.NavigateTo($"/PaisUpdate/{id}");
+    //         // do something
+    //     }
+    //     else
+    //     {
+    //         // do something
+    //         ToastService.Notify(new ToastMessage(ToastType.Danger, $"Delete action canceled."));
 
-        }
-    }
+    //     }
+    // }
 
     public async Task Create_Pais()
     {
-        if (text_buttom == "Save")
+       try
         {
-            Input.Foto_pais = ObtenerBytes(previewUrl);
-            var CreatePais = await PaisConsumo.CreatePais(Input);
-            ToastService.Notify(new(ToastType.Success, $"Record Pais Saved Successfully."));
-            await Task.Delay(3000);
-            await RefrescarGrid();
-            ResetForm();
+            if (text_buttom == "Save")
+            {
+                PreloadService.Show(SpinnerColor.Light, "Saving data...");
+                await Task.Delay(2000);
+                Input.Foto_pais = ObtenerBytes(previewUrl);
+                var CreatePais = await Consumo.Create("api/Paises", Input); // await PaisConsumo.CreatePais(Input);
+                ToastService.Notify(new(ToastType.Success, $"Record Pais Saved Successfully."));
+                await RefrescarGrid();
+                ResetForm();
+            }
+            if (text_buttom == "Update")
+            {
+                PreloadService.Show(SpinnerColor.Light, "Updating data...");
+                await Task.Delay(2000);
+                Input.Foto_pais = ObtenerBytes(previewUrl);
+                var CreatePais = await Consumo.Update("api/Paises", Input.Id_pais, Input);//await PaisConsumo.UpdatePais(Input);
+                ToastService.Notify(new(ToastType.Success, $"Record Pais Update Successfully."));
+                
+                await RefrescarGrid();
+                text_buttom = "Save";
+                ResetForm();
+            }
+
         }
-        if (text_buttom == "Update")
+        catch (Exception)
         {
-            Input.Foto_pais = ObtenerBytes(previewUrl);
-            var CreatePais = await PaisConsumo.UpdatePais(Input);
-            ToastService.Notify(new(ToastType.Success, $"Record Pais Update Successfully."));
-            await Task.Delay(3000);
-            await RefrescarGrid();
-            text_buttom = "Save";
-            ResetForm();
+            
+            throw;
+        }
+        finally
+        {
+            PreloadService.Hide();
         }
 
     }
@@ -354,7 +376,7 @@
             {
                 // Mostrar mensaje de error
                 ToastService.Notify(new(ToastType.Danger, $"Upload Only File *.jpg, *.jpeg, *.png"));
-                await Task.Delay(3000);
+                await Task.Delay(2000);
                 return;
             }
             // Convertimos el archivo a base64 para mostrarlo en un <img>
@@ -390,7 +412,24 @@
 
     private async Task RefrescarGrid()
     {
-        ListaPais = await PaisConsumo.GetPaisAll(); // traes otra vez de la API
-        await grid.RefreshDataAsync();
+      
+        try
+        {
+            PreloadService.Show(SpinnerColor.Light, "Loading data...");
+            await Task.Delay(2000);
+            ListaPais = await Consumo.GetAllRecords("api/Paises"); // // traes otra vez de la API
+            await grid.RefreshDataAsync();
+            
+        }
+        catch
+        {
+            // handle exception
+        }
+        finally
+        {
+            PreloadService.Hide();
+        }
+        
+        
     }
 }

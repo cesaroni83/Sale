@@ -5,17 +5,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Sale.Shared.Modelo.Entidades
+namespace Sale.Shared.Modelo.DTO
 {
-    public class Ciudad
+    public class ProvinciaDTO
     {
         [Key]
-        [Display(Name = "ID Ciudad")]
-        [Required(ErrorMessage = "El Campo {0} es Obligatorio!")]
-        public int Id_ciudad { get; set; }
-
-
-        [Display(Name = "Provincia")]
+        [Display(Name = "ID Provincia")]
         [Required(ErrorMessage = "El Campo {0} es Obligatorio!")]
         public int Id_provincia { get; set; }
 
@@ -26,20 +21,15 @@ namespace Sale.Shared.Modelo.Entidades
         [Display(Name = "Provincia")]
         [Required(ErrorMessage = "El Campo {0} es Obligatorio!")]
         [MaxLength(100, ErrorMessage = "El Campo {0} no puede mas de {1} Caracteres")]
-        public string Nombre_ciudad { get; set; } = null!;
+        public string Nombre_provincia { get; set; } = null!;
 
-        [Display(Name = "Informacion De Ciudad")]
+        [Display(Name = "Informacion De Pais")]
         [MaxLength(100, ErrorMessage = "El Campo {0} no puede mas de {1} Caracteres")]
-        public string Informacion_ciudad { get; set; } = string.Empty;
+        public string Informacion_provincia { get; set; } = string.Empty;
 
-        [Display(Name = "Fecha De Registro")]
-        public DateTime Date_reg { get; set; } = DateTime.Now;
-
-
-        [Display(Name = "Estado Ciudad")]
+        [Display(Name = "Estado Pais")]
         [Required(ErrorMessage = "El Campo {0} es Obligatorio!")]
         [MaxLength(10, ErrorMessage = "El Campo {0} no puede mas de {1} Caracteres")]
-        public string Estado_ciudad { get; set; } = string.Empty;
-
+        public string Estado_provincia { get; set; } = string.Empty;
     }
 }
